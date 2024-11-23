@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HACKER's TEST GAME</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .selected {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="game-name">
+      <h1>HACKER's TEST GAME</h1>
+      <div class="selection">
+        <h2>Choose Game Mode:</h2>
+        <div class="mode-buttons">
+          <button id="two-player" onclick="selectMode('player')">2 Players</button>
+          <button id="computer" onclick="selectMode('computer')">Play with Computer</button>
+        </div>
+
+        <div id="name-section" class="hidden">
+          <h2>Enter Player Name(s):</h2>
+          <input type="text" id="player1-name" placeholder="Player 1 Name (X)" />
+          <input type="text" id="player2-name" placeholder="Player 2 Name (O)" class="hidden" />
+        </div>
+
+        <button class="start" id="start-button" onclick="startGame()">Start Game</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let gameMode = '';
+
+    // Select game mode and display appropriate UI
+    const selectMode = (mode) => {
+      gameMode = mode;
+      document.getElementById('name-section').classList.remove('hidden');
+      document.getElementById('player2-name').classList.toggle('hidden', mode === 'computer');
+      document.getElementById('two-player').classList.remove('selected');
+      document.getElementById('computer').classList.remove('selected');
+      document.getElementById(mode === 'player' ? 'two-player' : 'computer').classList.add('selected');
+    };
+
+    // Start the game and store settings in localStorage
+    const startGame = () => {
+      const player1 = document.getElementById('player1-name').value || 'Player 1';
+      const player2 = gameMode === 'player' ? document.getElementById('player2-name').value || 'Player 2' : 'Computer';
+
+      // Validate player names
+      if (!player1 || (gameMode === 'player' && !player2)) {
+        alert('Please enter valid player names!');
+        return;
+      }
+
+      // Store game settings in localStorage for use in game page
+      localStorage.setItem('player1', player1);
+      localStorage.setItem('player2', player2);
+      localStorage.setItem('gameMode', gameMode);
+      
+      // Redirect to the game page
+      window.location.href = 'game.html';
+    };
+  </script>
+</body>
+</html>
