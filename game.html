@@ -49,15 +49,14 @@
     const board = Array(9).fill(null);
     let currentPlayer = 'X';
     let gameActive = true;
-
+    let computerThinking = false; // Prevent input during computer's turn
+  
     const turnIndicator = document.getElementById('turn-indicator');
     const gameStatus = document.getElementById('game-status');
     const cells = document.querySelectorAll('.cell');
-    const bgMusic = document.getElementById('bg-music');
-    const muteBtn = document.getElementById('mute-btn');
     const winContainer = document.getElementById('win-container');
     const winnerMessage = document.getElementById('winner-message');
-
+  
     const winningCombinations = [
       [0, 1, 2],
       [3, 4, 5],
@@ -68,200 +67,146 @@
       [0, 4, 8],
       [2, 4, 6],
     ];
-
+  
     let player1Name = localStorage.getItem('player1') || 'Player 1';
     let player2Name = localStorage.getItem('player2') || 'Player 2';
     const gameMode = localStorage.getItem('gameMode') || 'player'; // Default to 'player'
-
-    // Display player names and game mode
+  
     function setGameInfo() {
       turnIndicator.textContent = `Turn: ${player1Name} (X)`;
     }
-
-    // Handle Cell Click Event
+  
     function handleCellClick(index) {
-      if (!gameActive || board[index]) return;
-
-      // Player makes a move
+      if (!gameActive || computerThinking || board[index]) return;
+  
+      // Player or computer makes a move
       board[index] = currentPlayer;
       cells[index].textContent = currentPlayer;
       cells[index].classList.add(currentPlayer === 'X' ? 'neon-x' : 'neon-o');
-
-      // Check if the player won
+  
       if (checkWin(currentPlayer)) {
         gameStatus.textContent = `${currentPlayer === 'X' ? player1Name : player2Name} Wins! 🎉`;
-        gameActive = false;
-
-        // Show win container with winner
         winnerMessage.textContent = `${currentPlayer === 'X' ? player1Name : player2Name} Wins! 🎉`;
-        winContainer.style.display = 'flex'; // Show the win container
-
+        winContainer.style.display = 'flex';
+        gameActive = false;
         return;
       }
-
-      // Check for draw
+  
       if (board.every(cell => cell !== null)) {
         gameStatus.textContent = `It's a Draw!`;
-        gameActive = false;
-        winContainer.style.display = 'flex'; // Show the win container
         winnerMessage.textContent = `It's a Draw!`;
+        winContainer.style.display = 'flex';
+        gameActive = false;
         return;
       }
-
-      // Switch turns
+  
       currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
       turnIndicator.textContent = `Turn: ${currentPlayer === 'X' ? player1Name : player2Name} (${currentPlayer})`;
-
-      // If it's the computer's turn, make a move
+  
+      // Trigger computer move if gameMode is 'computer' and it's the computer's turn
       if (gameMode === 'computer' && currentPlayer === 'O') {
+        computerThinking = true;
         setTimeout(computerMove, 500); // Delay for computer move
       }
     }
-
-    // Check for a Winning Combination
+  
     function checkWin(player) {
       return winningCombinations.some(combination =>
         combination.every(index => board[index] === player)
       );
     }
-
-    // Restart Game
-    function restartGame() {
-      board.fill(null);
-      currentPlayer = 'X';
-      gameActive = true;
-      turnIndicator.textContent = `Turn: ${player1Name} (X)`;
-      gameStatus.textContent = '';
-      cells.forEach(cell => {
-        cell.textContent = '';
-        cell.classList.remove('neon-x', 'neon-o', 'win');
-      });
-      winContainer.style.display = 'none'; // Hide the win container
-      startGame();
-    }
-
-    // Go to Main Menu (Example)
-    function goToMainMenu() {
-      window.location.href = 'index.html';  // Assuming you have a main menu page
-    }
-
-    // Toggle Mute
-    function toggleMute() {
-      bgMusic.muted = !bgMusic.muted;
-      muteBtn.textContent = bgMusic.muted ? 'Unmute' : 'Mute';
-      localStorage.setItem('musicMuted', bgMusic.muted); // Save mute state
-    }
-
-    // Set Volume
-    function setVolume(value) {
-      bgMusic.volume = value;
-      localStorage.setItem('musicVolume', value); // Save volume state
-    }
-
-    // Minimax Algorithm for AI to always play optimally
-    function minimax(board, depth, isMaximizing) {
-      const scores = {
-        'X': -10,
-        'O': 10,
-        'draw': 0
-      };
-
-      let winner = checkWinner(board);
-      if (winner !== null) {
-        return scores[winner];
-      }
-
-      if (isBoardFull(board)) {
-        return scores['draw'];
-      }
-
-      if (isMaximizing) {
-        let bestScore = -Infinity;
-        for (let i = 0; i < 9; i++) {
-          if (board[i] === null) {
-            board[i] = 'O'; // AI plays as 'O'
-            let score = minimax(board, depth + 1, false);
-            board[i] = null;
-            bestScore = Math.max(score, bestScore);
-          }
-        }
-        return bestScore;
-      } else {
-        let bestScore = Infinity;
-        for (let i = 0; i < 9; i++) {
-          if (board[i] === null) {
-            board[i] = 'X'; // Player plays as 'X'
-            let score = minimax(board, depth + 1, true);
-            board[i] = null;
-            bestScore = Math.min(score, bestScore);
-          }
-        }
-        return bestScore;
-      }
-    }
-
-    // Check if the board is full (draw condition)
-    function isBoardFull(board) {
-      return board.every(cell => cell !== null);
-    }
-
-    // Check winner for the current board state
-    function checkWinner(board) {
-      for (const combination of winningCombinations) {
-        const [a, b, c] = combination;
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-          return board[a]; // Return 'X' or 'O' based on the winner
-        }
-      }
-      return null; // No winner yet
-    }
-
-    // Best move based on Minimax
+  
     function computerMove() {
       let bestMove = -1;
       let bestValue = -Infinity;
-
+  
+      // Find the best move using Minimax
       for (let i = 0; i < 9; i++) {
         if (board[i] === null) {
           board[i] = 'O';
           let moveValue = minimax(board, 0, false);
           board[i] = null;
-
+  
           if (moveValue > bestValue) {
             bestValue = moveValue;
             bestMove = i;
           }
         }
       }
-
-      handleCellClick(bestMove); // Make the best move
-    }
-
-    // Start Game
-    function startGame() {
-      gameActive = true;
-      setGameInfo();
-
-      // Randomize who starts
-      if (Math.random() < 0.5) {
-        currentPlayer = 'O'; // Let computer start
-        setTimeout(computerMove, 500); // Computer makes the first move
-      } else {
-        currentPlayer = 'X'; // Player starts
+  
+      // Make the move
+      board[bestMove] = 'O';
+      cells[bestMove].textContent = 'O';
+      cells[bestMove].classList.add('neon-o');
+  
+      // Reset computer thinking and continue game
+      computerThinking = false;
+      currentPlayer = 'X'; // Switch back to player
+      turnIndicator.textContent = `Turn: ${player1Name} (X)`;
+  
+      if (checkWin('O')) {
+        gameStatus.textContent = `${player2Name} Wins! 🎉`;
+        winnerMessage.textContent = `${player2Name} Wins! 🎉`;
+        winContainer.style.display = 'flex';
+        gameActive = false;
+        return;
       }
-
-      // Retrieve volume and mute state from localStorage
-      const savedVolume = localStorage.getItem('musicVolume') || 1;
-      const savedMute = localStorage.getItem('musicMuted') === 'true';
-
-      bgMusic.volume = savedVolume;
-      bgMusic.muted = savedMute;
-      muteBtn.textContent = savedMute ? 'Unmute' : 'Mute';
-      document.getElementById('volume-control').value = savedVolume;
+  
+      if (board.every(cell => cell !== null)) {
+        gameStatus.textContent = `It's a Draw!`;
+        winnerMessage.textContent = `It's a Draw!`;
+        winContainer.style.display = 'flex';
+        gameActive = false;
+      }
     }
-
+  
+    function minimax(board, depth, isMaximizing) {
+      const scores = { 'X': -10, 'O': 10, 'draw': 0 };
+      let winner = checkWinner(board);
+  
+      if (winner) return scores[winner];
+      if (board.every(cell => cell !== null)) return scores['draw'];
+  
+      let bestScore = isMaximizing ? -Infinity : Infinity;
+      let comparator = isMaximizing ? Math.max : Math.min;
+  
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+          board[i] = isMaximizing ? 'O' : 'X';
+          let score = minimax(board, depth + 1, !isMaximizing);
+          board[i] = null;
+          bestScore = comparator(score, bestScore);
+        }
+      }
+      return bestScore;
+    }
+  
+    function checkWinner(board) {
+      for (const combination of winningCombinations) {
+        const [a, b, c] = combination;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return board[a];
+        }
+      }
+      return null;
+    }
+  
+    function restartGame() {
+      board.fill(null);
+      currentPlayer = 'X';
+      gameActive = true;
+      computerThinking = false;
+      turnIndicator.textContent = `Turn: ${player1Name} (X)`;
+      gameStatus.textContent = '';
+      cells.forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('neon-x', 'neon-o');
+      });
+      winContainer.style.display = 'none';
+    }
+  
     // Initialize Game
-    startGame();
-  </script>
+    setGameInfo();
+  </script>  
 </body>
 </html>
