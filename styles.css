@@ -224,6 +224,7 @@ button.restart:hover {
     background-color: #45a049;
 }
 
+/*
 .audio-controls {
     position: fixed;
     bottom: 20px;
@@ -296,5 +297,5 @@ button.restart:hover {
     }
     100% {
         background: #ff4d6d;
-    }
+    }*/
 }
